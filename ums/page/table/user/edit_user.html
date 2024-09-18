@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>编辑用户</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../../lib/layui-v2.5.5/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-form layuimini-form" lay-filter="main_form">
+    <div class="layui-form-item">
+        <label class="layui-form-label required">账号</label>
+        <div class="layui-input-block">
+            <input type="text" name="username" lay-verify="required|username" lay-reqtext="账号不能为空" placeholder="请输入账号" value="" class="layui-input">
+            <tip>填写当前用户的账号。</tip>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label required">昵称</label>
+        <div class="layui-input-block">
+            <input type="text" name="nickname" lay-verify="required|nickname" placeholder="请输入昵称" autocomplete="off" class="layui-input" id="nickname">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label required">角色</label>
+        <div class="layui-input-block">
+            <input type="radio" name="roles" value="super_admin" title="超级管理员" checked="">
+            <input type="radio" name="roles" value="admin" title="管理员" checked="">
+            <input type="radio" name="roles" value="user" title="普通用户" checked="">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">邮箱</label>
+        <div class="layui-input-block">
+            <input type="text" name="email" lay-verify="email" placeholder="请输入邮箱" autocomplete="off" class="layui-input" id="email">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">手机号</label>
+        <div class="layui-input-block">
+            <input type="text" name="phone" lay-verify="phone" placeholder="请输入手机号" autocomplete="off" class="layui-input" id="phone">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label required">到期时间</label>
+        <div class="layui-input-inline">
+            <input type="text" name="expiration_ts" id="expiration_ts" lay-verify="required|date" placeholder="yyyy-MM-dd" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">启用</label>
+        <div class="layui-input-block">
+            <input type="checkbox" name="disabled" id="disabled" class="layui-input" lay-skin="switch" lay-text="是|否" checked>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认保存</button>
+        </div>
+    </div>
+</div>
+<script src="../../../lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+<script src="../../../js/lay-config.js?v=1.0.4" charset="utf-8"></script>
+<script src="../../../js/common.js?v=1.0.4" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'laydate'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            $ = layui.$;
+
+        //日期
+        laydate.render({
+            elem: '#expiration_ts'
+        });
+
+        const user_id = getQueryVariable("id");
+
+        // 初始化表单数据
+        $("input[name='username']").val(getQueryVariable("username"));
+        $("input[name='nickname']").val(getQueryVariable("nickname"));
+        $("input[name='roles'][value='" + getQueryVariable("roles") + "']").prop('checked', true);
+        $("input[name='email']").val(getQueryVariable("email"));
+        $("input[name='phone']").val(getQueryVariable("phone"));
+        var checkboxValue = getQueryVariable("checkbox2");
+        if (checkboxValue === 'true' || checkboxValue === '1' || checkboxValue === 'on' || checkboxValue === '是') {
+            $("input[name='disabled']").prop('checked', false);
+        } else {
+            $("input[name='disabled']").prop('checked', true);
+        }
+
+        // 自定义验证规则
+        form.verify({
+            // 验证用户名，且为必填项
+            username: function(value, elem){
+                if (!new RegExp("^[a-zA-Z0-9_\u4e00-\u9fa5\\s·]+$").test(value)) {
+                    return '用户名不能有特殊字符';
+                }
+                if (/(^_)|(__)|(_+$)/.test(value)) {
+                    return '用户名首尾不能出现下划线';
+                }
+                if (/^\d+$/.test(value)) {
+                    return '用户名不能全为数字';
+                }
+            },
+            // 验证密码，且为必填项
+            password: function(value, elem) {
+                if (!/^[\S]{8,20}$/.test(value)) {
+                    return '密码必须为8到20位的非空字符';
+                }
+                if (/^\d+$/.test(value)) {
+                    return '密码不能全为数字';
+                }
+                if (!((/[a-z]/.test(value) && /[A-Z]/.test(value)) || 
+                      (/[a-z]/.test(value) && /\d/.test(value)) || 
+                      (/[a-z]/.test(value) && /[^\w\s]/.test(value)) || 
+                      (/[A-Z]/.test(value) && /\d/.test(value)) || 
+                      (/[A-Z]/.test(value) && /[^\w\s]/.test(value)) || 
+                      (/\d/.test(value) && /[^\w\s]/.test(value)))) {
+                    return '密码必须包含大小写字母、数字和特殊符号中的两种及以上';
+                }
+            },
+            // 验证邮箱，可以为空
+            email: function(value, elem) {
+                if (value && !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(value)) {
+                    return '邮箱格式不正确';
+                }
+            },
+            // 验证手机号，可以为空
+            phone: function(value, elem) {
+                if (value && !/^1[3-9]\d{9}$/.test(value)) {
+                    return '手机号格式不正确';
+                }
+            },
+            // 验证昵称，且为必填项，限制长度为20个字符以内
+            nickname: function(value, elem) {
+                if (!new RegExp("^[a-zA-Z0-9_\u4e00-\u9fa5\\s·]{1,20}$").test(value)) {
+                    return '昵称不能有特殊字符，且长度不能超过20个字符';
+                }
+                if (/^\d+$/.test(value)) {
+                    return '昵称不能全为数字';
+                }
+            },
+        });
+        
+
+        //监听提交
+        form.on('submit(saveBtn)', function (data) {
+            let username = data.field.username;
+            let nickname = data.field.nickname;
+            let roles = data.field.roles;
+            let email = data.field.email;
+            let phone = data.field.phone;
+            let expiration_ts = data.field.expiration_ts;
+            let tmp_disabled = false;
+            if (data.field.disabled == "否") {
+                tmp_disabled = 0;
+            } else {
+                tmp_disabled = 1;
+            }
+
+            // 请求后端接口
+            $.ajax({
+                url: serverApiUrl + "/auth/update_user",
+                type: "post",
+                contentType: "application/json",
+                headers: {'Authorization': 'Bearer ' + localStorage.getItem(tokenKey)},
+                data: JSON.stringify(
+                    { 
+                        id: user_id,
+                        username: username, 
+                        ori_username: getQueryVariable("username"),
+                        nickname: nickname, 
+                        roles: roles, 
+                        email: email, 
+                        phone: phone, 
+                        expiration_ts: expiration_ts, 
+                        disabled: tmp_disabled, 
+                    }
+                ),
+                success: function(response) {
+                    layer.msg('更新成功', function () {
+                        
+                    });
+
+                    parent.layui.table.reload('currentTableId'); // 刷新父页面的表格数据
+                    var iframeIndex = parent.layer.getFrameIndex(window.name);
+                    parent.layer.close(iframeIndex);
+
+                },
+                error: function(xhr) {
+                    var error = JSON.parse(xhr.responseText);
+                    var errorMessage = error.detail + ' ';
+
+                    errorMessage += handleAjaxError(xhr);
+
+                    layer.msg('更新失败: ' + errorMessage, function () {
+                        // 错误处理逻辑
+                    });
+                }
+            });
+
+            return false;
+        });
+
+        // 重新渲染表单
+        form.render();
+    });
+</script>
+</body>
+</html>

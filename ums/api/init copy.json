@@ -1,0 +1,59 @@
+{
+  "homeInfo": {
+    "title": "首页",
+    "href": "page/device_manage.html?v=2.0.3"
+  },
+  "logoInfo": {
+    "title": "用户管理系统",
+    "image": "images/logo.png", 
+    "href": ""
+  },
+  "menuInfo": [
+    {
+      "title": "常规管理",
+      "icon": "fa fa-address-book",
+      "href": "",
+      "target": "_self",
+      "child": [
+        {
+          "title": "设备管理",
+          "href": "",
+          "icon": "fa fa-calendar",
+          "target": "_self",
+          "child": [
+            {
+              "title": "设备管理",
+              "href": "page/device_manage.html",
+              "icon": "fa fa-list-alt",
+              "target": "_self"
+            },
+            {
+              "title": "在线设备列表",
+              "href": "page/online_device.html",
+              "icon": "fa fa-navicon",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "项目管理",
+          "href": "page/project_manage.html",
+          "icon": "fa fa-server",
+          "target": "_self"
+        },
+        {
+          "title": "日志管理",
+          "href": "page/log_manage.html",
+          "icon": "fa fa-server",
+          "target": "_self"
+        },
+        {
+          "title": "系统管理",
+          "href": "page/system_manage.html",
+          "icon": "fa fa-server",
+          "target": "_self"
+        }
+      ]
+    }
+  ]
+}

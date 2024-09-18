@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>日志管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../lib/layui-v2.5.5/css/layui.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">用户名</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="username" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">昵称</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="nickname" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">内容</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="message" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button type="submit" class="layui-btn layui-btn-primary"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+
+        <script type="text/html" id="toolbarDemo">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm layui-btn-danger data-delete-btn" lay-event="delete"> 清空所有日志 </button>
+            </div>
+        </script>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <div id="laypage-all"></div>
+
+        <script type="text/html" id="currentTableBar">
+            <a class="layui-btn layui-btn-xs layui-btn-danger data-count-delete" lay-event="delete">删除</a>
+        </script>
+
+    </div>
+</div>
+<script src="../lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+<script src="../js/common.js?v=1.0.4" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'table'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            url: serverApiUrl + '/log/get_log_list',
+            method: 'post',
+            contentType: "application/json",
+            headers: {Authorization: 'Bearer ' + localStorage.getItem(tokenKey)},
+            toolbar: '#toolbarDemo',
+            // 表格右上角的自带功能
+            defaultToolbar: ['filter', 'exports'],
+            cols: [[
+                {type: "checkbox", width: 50},
+                {field: 'id', width: 80, title: 'ID', sort: true},
+                {field: 'user_id', width: 100, title: '用户ID'},
+                {field: 'username', width: 180, title: '用户名'},
+                {field: 'nickname', width: 180, title: '昵称'},
+                {field: 'message', title: '内容'},
+                {field: 'update_ts', width: 180, title: '更新时间', sort: true},
+                {title: '操作', minWidth: 50, toolbar: '#currentTableBar', align: "center"}
+            ]],
+            limits: [10, 15, 20, 25, 50, 100],
+            loading: true, // 显示默认加载条
+            page: true,
+            skin: 'line',
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            var result = JSON.stringify(data.field);
+
+            //执行搜索重载
+            table.reload('currentTableId', {
+                where: {
+                    search_params: result
+                }
+            }, 'data');
+
+            return false;
+        });
+
+        /**
+         * toolbar监听事件
+         */
+        table.on('toolbar(currentTableFilter)', function (obj) {
+            if (obj.event === 'delete') {  // 监听删除操作
+                // 弹出确认框
+                layer.confirm(`确认删除所有的日志吗？`, function (index) {
+                    var checkStatus = table.checkStatus('currentTableId')
+                        , data = checkStatus.data;
+
+                    $.ajax({
+                        url: serverApiUrl + "/log/del_all_logs",
+                        type: "post",
+                        contentType: "application/json",
+                        headers: {'Authorization': 'Bearer ' + localStorage.getItem(tokenKey)},
+                        success: function(response) {
+                            layer.msg('删除成功', function () {
+                                
+                            });
+
+                            table.reload('currentTableId');
+                            obj.del();
+                        },
+                        error: function(xhr) {
+                            var error = JSON.parse(xhr.responseText);
+        
+                            layer.msg('删除失败', function () {
+                                
+                            });
+                        }
+                    });
+                });
+            }
+        });
+
+        
+
+        //监听表格复选框选择
+        table.on('checkbox(currentTableFilter)', function (obj) {
+            console.log(obj)
+        });
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            console.log(data);
+
+            if (obj.event === 'delete') {
+                layer.confirm(`确认删除日志 ${data.id} 吗？`, function (index) {
+                    $.ajax({
+                        url: serverApiUrl + "/log/del_log",
+                        type: "post",
+                        contentType: "application/json",
+                        headers: {'Authorization': 'Bearer ' + localStorage.getItem(tokenKey)},
+                        data: JSON.stringify({ id: data.id }),
+                        success: function(response) {
+                            layer.msg('删除成功', function () {
+                                
+                            });
+
+                            table.reload('currentTableId');
+                            obj.del();
+                        },
+                        error: function(xhr) {
+                            var error = JSON.parse(xhr.responseText);
+        
+                            layer.msg('删除失败', function () {
+                                
+                            });
+                        }
+                    });
+
+                    layer.close(index);
+                });
+            }
+        });
+
+    });
+</script>
+
+</body>
+</html>

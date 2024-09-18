@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>用户列表</title>
+  <meta name="renderer" content="webkit" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <link rel="stylesheet" href="../lib/layui-v2.5.5/css/layui.css" media="all" />
+  <link rel="stylesheet" href="../css/public.css" media="all" />
+  <link rel="stylesheet" href="../js/lay-module/step-lay/step.css" media="all">
+  <style>
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      margin: 0px 5px;
+    }
+
+    .dropbtn {
+      background-color: #1e9fff;
+      color: rgb(255, 255, 255);
+      border: none;
+      cursor: pointer;
+      margin-left: 0;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 10px;
+      font-size: 12px;
+      display: block;
+      white-space: nowrap;
+      text-align: center;
+      border-radius: 2px;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #ffffff;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      min-width: 80px;
+    }
+
+    .dropdown-content button {
+      background-color: rgb(255 255 255);
+      color: rgb(0, 0, 0);
+      border: none;
+      cursor: pointer;
+      margin-left: 0;
+      margin-bottom: 0px;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 10px;
+      font-size: 12px;
+      display: block;
+      white-space: nowrap;
+      text-align: left;
+      border-radius: 2px;
+      min-width: 80px;
+    }
+
+    .dropdown-content button:hover {
+      background-color: #c7c7c7;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .dropdown:hover .dropbtn {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layuimini-container">
+    <div class="layuimini-main">
+      <div class="layui-carousel" id="stepForm" lay-filter="stepForm" style="margin: 0 auto;">
+        <fieldset class="table-search-fieldset">
+          <legend>搜索信息</legend>
+          <div style="margin: 10px 10px 10px 10px">
+            <form class="layui-form layui-form-pane" action="">
+              <div class="layui-form-item">
+                <div class="layui-inline">
+                  <label class="layui-form-label">账号</label>
+                  <div class="layui-input-inline">
+                    <input type="text" name="username" autocomplete="off" class="layui-input" />
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label class="layui-form-label">昵称</label>
+                  <div class="layui-input-inline">
+                    <input type="text" name="nickname" autocomplete="off" class="layui-input" />
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label class="layui-form-label">手机号</label>
+                  <div class="layui-input-inline">
+                    <input type="text" name="phone" autocomplete="off" class="layui-input" />
+                  </div>
+                </div>
+
+                <div class="layui-inline">
+                  <button type="submit" class="layui-btn layui-btn-primary" lay-submit lay-filter="data-search-btn">
+                    <i class="layui-icon"></i> 搜 索
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </fieldset>
+
+        <script type="text/html" id="toolbarDemo">
+          <div class="layui-btn-container">
+            <button
+              class="layui-btn layui-btn-normal layui-btn-sm data-add-btn"
+              lay-event="add"
+            >
+              新增
+            </button>
+            <button
+              class="layui-btn layui-btn-normal layui-btn-sm data-add-btn"
+              lay-event="batch_add"
+            >
+              批量新增
+            </button>
+            <button
+              class="layui-btn layui-btn-sm layui-btn-danger data-delete-btn"
+              lay-event="delete"
+            >
+              删除
+            </button>
+            
+          </div>
+        </script>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <script type="text/html" id="currentTableBar">
+          <a
+            class="layui-btn layui-btn-normal layui-btn-xs data-count-edit"
+            lay-event="edit"
+            >编辑</a
+          >
+          <a
+            class="layui-btn layui-btn-normal layui-btn-xs data-count-change-password"
+            lay-event="change_password"
+            >修改密码</a
+          >
+          <a
+            class="layui-btn layui-btn-xs layui-btn-danger data-count-delete"
+            lay-event="delete"
+            >删除</a
+          >
+        </script>
+      </div>
+    </div>
+  </div>
+  <script src="../lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+  <script src="../js/lay-config.js?v=1.0.4" charset="utf-8"></script>
+  <script src="../js/common.js?v=1.0.4" charset="utf-8"></script>
+  <script>
+    layui.use(["form", "table", "laypage"], function () {
+      var $ = layui.jquery,
+        form = layui.form,
+        table = layui.table,
+        laypage = layui.laypage;
+
+      
+
+      table.render({
+        elem: "#currentTableId",
+        url: serverApiUrl + "/auth/get_user_list",
+        method: "post",
+        contentType: "application/json",
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem(tokenKey),
+        },
+        toolbar: "#toolbarDemo",
+        defaultToolbar: ["filter", "exports"],
+        cols: [
+          [
+            { type: "checkbox", width: 50 },
+            { field: "id", width: 70, title: "ID", sort: true },
+            { field: "username", width: 150, title: "账号" },
+            { field: "nickname", width: 150, title: "昵称" },
+            { field: "roles", width: 100, title: "角色" },
+            { field: "email", width: 220, title: "邮箱" },
+            { field: "phone", width: 140, title: "手机号" },
+            { field: "expiration_ts", width: 180, title: "过期时间", sort: true },
+            { field: "last_login_ts", width: 180, title: "上次登录时间", sort: true },
+            {
+              field: "create_ts",
+              width: 180,
+              title: "创建时间",
+              sort: true,
+            },
+            { field: "disabled", width: 100, title: "禁用" },
+            {
+              title: "操作",
+              minWidth: 220,
+              toolbar: "#currentTableBar",
+              align: "center",
+            },
+          ],
+        ],
+        loading: true, // 显示默认加载条
+        page: true,
+        skin: "line",
+      });
+
+      // 监听搜索操作
+      form.on("submit(data-search-btn)", function (data) {
+        var result = JSON.stringify(data.field);
+
+        //执行搜索重载
+        table.reload(
+          "currentTableId",
+          {
+            where: {
+              search_params: result,
+            },
+          },
+          "data"
+        );
+
+        return false;
+      });
+
+      /**
+       * toolbar监听事件
+       */
+      table.on("toolbar(currentTableFilter)", function (obj) {
+        if (obj.event === "add") {
+          // 监听添加操作
+          var index = layer.open({
+            title: "新增用户",
+            type: 2,
+            shade: 0.2,
+            maxmin: true,
+            shadeClose: true,
+            area: ["100%", "100%"],
+            content: "../page/table/user/add_user.html?v=1.0.4",
+          });
+          $(window).on("resize", function () {
+            layer.full(index);
+          });
+        } else if (obj.event === "batch_add") {
+          var index = layer.open({
+            title: "批量新增用户",
+            type: 2,
+            shade: 0.2,
+            maxmin: true,
+            shadeClose: true,
+            area: ["100%", "100%"],
+            content: "../page/table/user/add_users.html?v=1.0.4",
+          });
+          $(window).on("resize", function () {
+            layer.full(index);
+          });
+        } else if (obj.event === "delete") {
+          // 监听删除操作
+          var checkStatus = table.checkStatus("currentTableId"),
+            data = checkStatus.data;
+
+          $.ajax({
+            url: serverApiUrl + "/auth/del_users",
+            type: "post",
+            contentType: "application/json",
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem(tokenKey),
+            },
+            data: JSON.stringify({ ids: data }),
+            success: function (response) {
+              layer.msg("删除成功", function () { });
+
+              table.reload("currentTableId"); // 删除设备后刷新表格数据
+              obj.del();
+            },
+            error: function (xhr) {
+              var error = JSON.parse(xhr.responseText);
+
+              layer.msg("删除失败", function () { });
+            },
+          });
+        } 
+      });
+
+      //监听表格复选框选择
+      table.on("checkbox(currentTableFilter)", function (obj) {
+        console.log(obj);
+      });
+
+      table.on("tool(currentTableFilter)", function (obj) {
+        var data = obj.data;
+        console.log(data);
+
+        if (obj.event === "edit") {
+          layer.open({
+            title: "编辑用户",
+            type: 2,
+            shade: 0.2,
+            maxmin: true,
+            shadeClose: true,
+            area: ["100%", "100%"],
+            content: `../page/table/user/edit_user.html?v=1.0.4&${jsonToUrlEncoded(
+              data
+            )}`,
+          });
+        } else if (obj.event === "change_password") {
+          layer.open({
+            title: "修改密码",
+            type: 2,
+            shade: 0.2,
+            maxmin: true,
+            shadeClose: true,
+            area: ["100%", "100%"],
+            content: `../page/table/user/user_password.html?v=1.0.4&${jsonToUrlEncoded(
+              data
+            )}`,
+          });
+        } else if (obj.event === "delete") {
+          layer.confirm(`确认删除用户${data.username}吗？`, function (index) {
+            $.ajax({
+              url: serverApiUrl + "/auth/del_user",
+              type: "post",
+              contentType: "application/json",
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem(tokenKey),
+              },
+              data: JSON.stringify({ id: data.id }),
+              success: function (response) {
+                layer.msg("删除成功", function () { });
+  
+                table.reload("currentTableId"); // 删除设备后刷新表格数据
+                obj.del();
+              },
+              error: function (xhr) {
+                var error = JSON.parse(xhr.responseText);
+  
+                layer.msg("删除失败", function () { });
+              },
+            });
+
+            obj.del();
+            layer.close(index);
+            table.reload("currentTableId"); // 删除设备后刷新表格数据
+          });
+        } 
+      });
+    });
+  </script>
+</body>
+
+</html>

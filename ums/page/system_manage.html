@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>系统管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../lib/layui-v2.5.5/css/layui.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .login-form {background-color:#fff;border:1px solid #fff;border-radius:3px;padding:14px 20px;box-shadow:0 0 8px #eeeeee;}
+        .login-form .layui-form-item {position:relative;}
+        .login-form .layui-form-item label {position:absolute;left:1px;top:1px;width:38px;line-height:36px;text-align:center;color:#d2d2d2;}
+        .login-form .layui-form-item input {padding-left:36px;}
+    </style>
+</head>
+
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main">
+            <div class="layui-card">
+                <div class="layui-card-header">用户管理系统登录信息</div>
+                <div class="layui-card-body">
+                    <div class="layui-form login-form">
+                        <form class="layui-form" action="">
+                            <div class="layui-form-item">
+                                <div class="layui-inline">
+                                    <div class="layui-form-item">
+                                        <label class="layui-icon layui-icon-username" for="username"></label>
+                                        <input type="text" name="username" lay-verify="required|username" placeholder="用户名" autocomplete="off" class="layui-input" value="admin">
+                                    </div>
+                                    <div class="layui-form-item">
+                                        <label class="layui-icon layui-icon-password" for="password"></label>
+                                        <input type="password" name="password" lay-verify="required|password" lay-affix="eye" placeholder="密码" autocomplete="off" class="layui-input" value="admin123">
+                                    </div>
+                                    <button type="button" class="layui-btn layui-btn-normal" id="check_login">验证登录</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card">
+                <div class="layui-card-header">数据备份&恢复</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <button type="button" class="layui-btn layui-btn-normal" id="download-db">下载数据库</button>
+                            <button type="button" class="layui-btn layui-btn-normal" id="upload-db-choose">选择数据库文件</button>
+                            <i class="layui-text-em" id="choosed-filename">--</i>
+                            <button type="button" class="layui-btn layui-btn-normal" id="upload-db">上传数据库</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+    <script src="../js/spark-md5.min.js" charset="utf-8"></script>
+    <script src="../js/common.js?v=1.0.4" charset="utf-8"></script>
+    <script>
+        layui.use(['form', 'table', "upload"], function () {
+            var $ = layui.jquery,
+                form = layui.form,
+                upload = layui.upload;
+
+
+            let file_md5 = "";
+
+            // 渲染
+            let upload_inst = upload.render({
+                elem: '#upload-db-choose',
+                accept: 'file',
+                exts: 'db',
+                url: serverApiUrl + '/db/upload_db', // 此处配置你自己的上传接口即可
+                headers: {'Authorization': 'Bearer ' + localStorage.getItem(tokenKey)},
+                data: {
+                    md5: function(){
+                        return file_md5;
+                    }
+                },
+                size: 102400, // 限制文件大小，单位 KB
+                multiple: false,
+                number: 1,
+                auto: false,
+                bindAction: '#upload-db',
+                done: function(res) {
+                    console.log(res);
+                    if(res.data.code == 0 && res.data.success == true){
+                        layer.msg('上传成功');
+
+                        parent.layui.table.reload('currentTableId'); // 刷新父页面的表格数据
+                        var iframeIndex = parent.layer.getFrameIndex(window.name);
+                        parent.layer.close(iframeIndex);
+                    } else {
+                        layer.msg(res.data.msg);
+                    }
+                },
+                choose: function(obj) {
+                    obj.preview(function(index, file, result) {
+                        // 计算文件的 MD5 值
+                        var fileReader = new FileReader();
+                        var spark = new SparkMD5.ArrayBuffer();
+
+                        fileReader.onload = function(e) {
+                            spark.append(e.target.result);
+                            var md5 = spark.end();
+                            console.log("文件的MD5值:", md5);
+
+                            file_md5 = md5;
+                        };
+
+                        fileReader.readAsArrayBuffer(file);
+
+                        $('#choosed-filename').text(file.name);
+                    });
+                },
+                error: function(index, upload){ // 错误回调
+                    layer.msg('上传失败');
+                }
+            });
+
+            document.getElementById('download-db').onclick = function() {
+                fetch('/db/download_db', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem(tokenKey)
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'data.db';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    layer.msg('下载失败');
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+            };
+
+        });
+    </script>
+
+</body>
+
+</html>

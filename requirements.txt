@@ -1,0 +1,18 @@
+# front end
+jinja2
+python-jose
+passlib
+bcrypt
+databases
+sqlalchemy
+aiosqlite
+asyncmy
+# back end
+fastapi[all]
+asyncio
+aiohttp
+loguru
+websockets
+chardet
+# test
+openpyxl
