@@ -5,6 +5,8 @@
 # 环境
 
 python: 3.10  
+数据库：SQLite3  
+操作系统：Windows 10 / Linux
 
 # 安装
 
@@ -13,6 +15,10 @@ python: 3.10
 # 运行
 
 `python main.py`
+
+浏览器打开：`http://127.0.0.1:1119/ums/login.html`，即可访问登录页面。  
+
+API文档：`http://127.0.0.1:1119/docs`  
 
 # 数据库添加默认数据
 
